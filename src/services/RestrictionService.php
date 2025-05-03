@@ -343,7 +343,15 @@ class RestrictionService extends Component
         $authorOnlySections = $user ? $this->getAuthorOnlySections($user, 'mutation') : [];
 
         $entriesService = Craft::$app->getEntries();
-        $entrySection = $entriesService->getSectionById($entry->sectionId)->handle;
+        
+        // check if element has a section id, if not look for the root owner (in case of nested matrix).
+        $sectionIdToCheck = $entry->sectionId ? $entry->sectionId : ($entry->getRootOwner() ? $entry->getRootOwner()->sectionId : null);
+        
+        // If there is no section id bypass this check
+        if (!$sectionIdToCheck) {
+            return true;
+        }
+        $entrySection = $entriesService->getSectionById($sectionIdToCheck)->handle;
 
         if (!in_array($entrySection, $authorOnlySections)) {
             return true;
