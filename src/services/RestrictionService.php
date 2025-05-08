@@ -339,7 +339,8 @@ class RestrictionService extends Component
         $authorOnlySections = $user ? $this->getAuthorOnlySections($user, 'mutation') : [];
 
         $entriesService = Craft::$app->getEntries();
-        $entrySection = $entriesService->getSectionById($entry->sectionId)->handle;
+        $sectionIdToTest = $entry->sectionId ? $entry->sectionId : $entry->getRootOwner()->sectionId;
+        $entrySection = $entriesService->getSectionById($sectionIdToTest)->handle;
 
         if (!in_array($entrySection, $authorOnlySections)) {
             return true;
