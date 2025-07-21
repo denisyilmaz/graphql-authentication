@@ -1,4 +1,5 @@
 <?php
+
 /**
  * GraphQL Authentication plugin for Craft CMS 4.0
  *
@@ -22,6 +23,7 @@ use jamesedmonston\graphqlauthentication\models\Settings;
 use jamesedmonston\graphqlauthentication\services\AppleService;
 use jamesedmonston\graphqlauthentication\services\ErrorService;
 use jamesedmonston\graphqlauthentication\services\FacebookService;
+use jamesedmonston\graphqlauthentication\services\FieldMappingService;
 use jamesedmonston\graphqlauthentication\services\GoogleService;
 use jamesedmonston\graphqlauthentication\services\MagicService;
 use jamesedmonston\graphqlauthentication\services\MicrosoftService;
@@ -43,6 +45,7 @@ use yii\base\Event;
  * @property TokenService $token
  * @property UserService $user
  * @property RestrictionService $restriction
+ * @property FieldMappingService $fieldMapping
  * @property SocialService $social
  * @property GoogleService $google
  * @property FacebookService $facebook
@@ -79,6 +82,11 @@ class GraphqlAuthentication extends Plugin
      * @var RestrictionService
      */
     public static $restrictionService;
+
+    /**
+     * @var FieldMappingService
+     */
+    public static $fieldMappingService;
 
     /**
      * @var SocialService
@@ -162,6 +170,7 @@ class GraphqlAuthentication extends Plugin
             'token' => TokenService::class,
             'user' => UserService::class,
             'restriction' => RestrictionService::class,
+            'fieldMapping' => FieldMappingService::class,
             'social' => SocialService::class,
             'google' => GoogleService::class,
             'facebook' => FacebookService::class,
@@ -176,6 +185,7 @@ class GraphqlAuthentication extends Plugin
         $this->token->init();
         $this->user->init();
         $this->restriction->init();
+        $this->fieldMapping->init();
         $this->social->init();
         $this->google->init();
         $this->facebook->init();
@@ -189,6 +199,7 @@ class GraphqlAuthentication extends Plugin
         self::$tokenService = $this->token;
         self::$userService = $this->user;
         self::$restrictionService = $this->restriction;
+        self::$fieldMappingService = $this->fieldMapping;
         self::$socialService = $this->social;
         self::$googleService = $this->google;
         self::$facebookService = $this->facebook;

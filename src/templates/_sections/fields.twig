@@ -3,55 +3,66 @@
 <h1>Fields</h1>
 
 {{ forms.field({
-  instructions: "Choose which fields are forbidden from being accessed through queries and mutations – per schema. Any attempts to access a restricted field will cause the request to throw.",
+  instructions: "Choose which fields are forbidden from being accessed through queries and mutations – per schema. Fields are shown as they appear in GraphQL queries. Any attempts to access a restricted field will cause the request to throw.",
   first: true,
 }, '') }}
 
 <hr style='border-color:transparent' />
 
-<div class="tablepane">
-  <table class='data fullwidth'>
-    <thead>
-      <tr>
-        <th>
-          Field
-        </th>
+{% if schemaFields is empty %}
+  <div class="warning">
+    <p>Please configure your GraphQL schemas in the Users tab first. Field restrictions are configured per schema.</p>
+  </div>
+{% else %}
+  {% for schemaName, fields in schemaFields %}
+    {% if fields is not empty %}
+      <h2>{{ schemaName }} Schema Fields</h2>
+      
+      <div class="tablepane">
+        <table class='data fullwidth'>
+          <thead>
+            <tr>
+              <th>GraphQL Field Name</th>
+              <th>Type</th>
+              <th>Access Level</th>
+            </tr>
+          </thead>
 
-        {% for schema in schemaOptions %}
-          <th>{{ schema.label == '-' ? 'Public' : schema.label }}</th>
-        {% endfor %}
-      </tr>
-    </thead>
+          <tbody>
+            {% for fieldName, fieldInfo in fields %}
+              <tr>
+                <td style='vertical-align:top;padding-top:20px'>
+                  {{ forms.field({
+                    label: fieldName,
+                    instructions: fieldInfo.description ? fieldInfo.description : 'From: ' ~ fieldInfo.type,
+                  }, '') }}
+                </td>
+                
+                <td style='vertical-align:top;padding-top:20px'>
+                  <code>{{ fieldInfo.type }}</code>
+                </td>
 
-    <tbody>
-      {% for field in fields %}
-        {% set first = loop.first %}
-
-        <tr>
-          <td style='vertical-align:top;padding-top:20px'>
-            {{ forms.field({
-              label: field.name,
-              instructions: "(" ~ field.handle ~ ")",
-            }, '') }}
-          </td>
-
-          {% for schema in schemaOptions %}
-            {% set schemaKey = 'schema-' ~ (schema.value != '' ? schema.value : '1') %}
-
-            <td style='vertical-align:top;padding-top:20px'>
-              {{ forms.selectField({
-                name: 'fieldRestrictions[' ~ schemaKey ~ '][' ~ field.handle ~ ']',
-                value: settings.fieldRestrictions[schemaKey][field.handle] ?? 'queryMutate',
-                options: [
-                  { value: 'queryMutate', label: 'Query & Mutate' },
-                  { value: 'query', label: 'Query' },
-                  { value: 'private', label: 'Private' },
-                ],
-              }) }}
-            </td>
-          {% endfor %}
-        </tr>
-      {% endfor %}
-    </tbody>
-  </table>
-</div>
+                <td style='vertical-align:top;padding-top:20px'>
+                  {% set schemaKey = 'schema-' ~ schemaName %}
+                  {{ forms.selectField({
+                    name: 'fieldRestrictions[' ~ schemaKey ~ '][' ~ fieldName ~ ']',
+                    value: settings.fieldRestrictions[schemaKey][fieldName] ?? 'queryMutate',
+                    options: [
+                      { value: 'queryMutate', label: 'Query & Mutate' },
+                      { value: 'query', label: 'Query Only' },
+                      { value: 'private', label: 'Private' },
+                    ],
+                  }) }}
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      
+      {% if not loop.last %}
+        <hr style='margin: 2rem 0;' />
+      {% endif %}
+    {% endif %}
+  {% endfor %}
+{% endif %}

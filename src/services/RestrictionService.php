@@ -63,7 +63,7 @@ class RestrictionService extends Component
         Event::on(
             Entry::class,
             Entry::EVENT_BEFORE_SAVE,
-            function(ModelEvent $event) {
+            function (ModelEvent $event) {
                 $this->restrictMutationFields($event);
                 $this->ensureEntryMutationAllowed($event);
             }
@@ -78,7 +78,7 @@ class RestrictionService extends Component
         Event::on(
             Asset::class,
             Asset::EVENT_BEFORE_SAVE,
-            function(ModelEvent $event) {
+            function (ModelEvent $event) {
                 $this->restrictMutationFields($event);
                 $this->ensureAssetMutationAllowed($event);
             }
@@ -244,11 +244,17 @@ class RestrictionService extends Component
 
         $errorService = GraphqlAuthentication::$errorService;
 
-        $queryFields = array_keys(array_filter($fieldPermissions, function($permission) {
+        // Get field mapping for this schema to handle renamed fields
+        $fieldMapping = GraphqlAuthentication::$fieldMappingService->getFieldMapping($schema);
+
+        // Convert stored restrictions (original handles) to GraphQL field names
+        $restrictedGraphqlFields = $this->_convertRestrictionsToGraphqlFields($fieldPermissions, $fieldMapping);
+
+        $queryFields = array_keys(array_filter($restrictedGraphqlFields, function ($permission) {
             return $permission === 'query';
         }));
 
-        $privateFields = array_keys(array_filter($fieldPermissions, function($permission) {
+        $privateFields = array_keys(array_filter($restrictedGraphqlFields, function ($permission) {
             return $permission === 'private';
         }));
 
@@ -422,7 +428,7 @@ class RestrictionService extends Component
             }
         }
 
-        $authorOnlySections = array_keys(array_filter($authorOnlySections, function($section) {
+        $authorOnlySections = array_keys(array_filter($authorOnlySections, function ($section) {
             return (bool) $section;
         }));
 
@@ -461,7 +467,7 @@ class RestrictionService extends Component
             }
         }
 
-        $authorOnlyVolumes = array_keys(array_filter($authorOnlyVolumes, function($section) {
+        $authorOnlyVolumes = array_keys(array_filter($authorOnlyVolumes, function ($section) {
             return (bool) $section;
         }));
 
@@ -470,6 +476,34 @@ class RestrictionService extends Component
 
     // Protected Methods
     // =========================================================================
+
+    /**
+     * Convert field restrictions from original handles to GraphQL field names
+     *
+     * @param array $fieldPermissions
+     * @param array $fieldMapping
+     * @return array
+     */
+    private function _convertRestrictionsToGraphqlFields(array $fieldPermissions, array $fieldMapping): array
+    {
+        $graphqlRestrictions = [];
+
+        // Reverse the mapping to go from original handle to GraphQL field name
+        $reverseMapping = array_flip($fieldMapping);
+
+        foreach ($fieldPermissions as $originalHandle => $permission) {
+            // If this original handle has been renamed in GraphQL, use the GraphQL name
+            if (isset($reverseMapping[$originalHandle])) {
+                $graphqlFieldName = $reverseMapping[$originalHandle];
+                $graphqlRestrictions[$graphqlFieldName] = $permission;
+            } else {
+                // Field hasn't been renamed, use original handle
+                $graphqlRestrictions[$originalHandle] = $permission;
+            }
+        }
+
+        return $graphqlRestrictions;
+    }
 
     /**
      * Recurses through query and mutation field selections, ensuring they're queryable

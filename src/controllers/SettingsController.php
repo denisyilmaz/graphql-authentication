@@ -154,8 +154,16 @@ class SettingsController extends Controller
             $settings->jwtSecretKey = Craft::$app->getSecurity()->generateRandomString(32);
         }
 
-        $fieldsServices = Craft::$app->getFields();
-        $fields = $fieldsServices->getAllFields();
+        // Get GraphQL fields for each schema instead of all Craft fields
+        $schemaFields = [];
+        foreach ($schemaOptions as $schemaOption) {
+            if ($schemaOption['value'] && $schemaOption['value'] !== '') {
+                $schema = $gqlService->getSchemaByName($schemaOption['value']);
+                if ($schema) {
+                    $schemaFields[$schemaOption['value']] = GraphqlAuthentication::$fieldMappingService->getGraphqlFieldsForSchema($schema);
+                }
+            }
+        }
 
         $this->renderTemplate('graphql-authentication/settings', compact(
             'settings',
@@ -171,7 +179,7 @@ class SettingsController extends Controller
             'entryMutations',
             'assetQueries',
             'assetMutations',
-            'fields'
+            'schemaFields'
         ));
     }
 
@@ -186,14 +194,14 @@ class SettingsController extends Controller
         $entryQueries = [];
         $entryMutations = [];
 
-        $scopes = array_filter($schema->scope, function($key) {
+        $scopes = array_filter($schema->scope, function ($key) {
             return StringHelper::contains($key, 'sections');
         });
 
         foreach ($scopes as $scope) {
             $scopeId = explode(':', explode('.', $scope)[1])[0];
 
-            $section = array_values(array_filter($sections, function($type) use ($scopeId) {
+            $section = array_values(array_filter($sections, function ($type) use ($scopeId) {
                 return $type['uid'] === $scopeId;
             }))[0] ?? null;
 
@@ -234,14 +242,14 @@ class SettingsController extends Controller
         $assetQueries = [];
         $assetMutations = [];
 
-        $scopes = array_filter($schema->scope, function($key) {
+        $scopes = array_filter($schema->scope, function ($key) {
             return StringHelper::contains($key, 'volumes');
         });
 
         foreach ($scopes as $scope) {
             $scopeId = explode(':', explode('.', $scope)[1])[0];
 
-            $volume = array_values(array_filter($volumes, function($type) use ($scopeId) {
+            $volume = array_values(array_filter($volumes, function ($type) use ($scopeId) {
                 return $type['uid'] === $scopeId;
             }))[0] ?? null;
 
