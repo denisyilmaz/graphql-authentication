@@ -18,7 +18,9 @@
         </th>
 
         {% for schema in schemaOptions %}
-          <th>{{ schema.label == '-' ? 'Public' : schema.label }}</th>
+          {% if schema.value != '' %}
+            <th>{{ schema.label }}</th>
+          {% endif %}
         {% endfor %}
       </tr>
     </thead>
@@ -36,19 +38,21 @@
           </td>
 
           {% for schema in schemaOptions %}
-            {% set schemaKey = 'schema-' ~ (schema.value != '' ? schema.value : '1') %}
+            {% if schema.value != '' %}
+              {% set schemaKey = 'schema-' ~ schema.value %}
 
-            <td style='vertical-align:top;padding-top:20px'>
-              {{ forms.selectField({
-                name: 'fieldRestrictions[' ~ schemaKey ~ '][' ~ field.handle ~ ']',
-                value: settings.fieldRestrictions[schemaKey][field.handle] ?? 'queryMutate',
-                options: [
-                  { value: 'queryMutate', label: 'Query & Mutate' },
-                  { value: 'query', label: 'Query' },
-                  { value: 'private', label: 'Private' },
-                ],
-              }) }}
-            </td>
+              <td style='vertical-align:top;padding-top:20px'>
+                {{ forms.selectField({
+                  name: 'fieldRestrictions[' ~ schemaKey ~ '][' ~ field.handle ~ ']',
+                  value: settings.fieldRestrictions[schemaKey][field.handle] ?? 'queryMutate',
+                  options: [
+                    { value: 'queryMutate', label: 'Query & Mutate' },
+                    { value: 'query', label: 'Query' },
+                    { value: 'private', label: 'Private' },
+                  ],
+                }) }}
+              </td>
+            {% endif %}
           {% endfor %}
         </tr>
       {% endfor %}

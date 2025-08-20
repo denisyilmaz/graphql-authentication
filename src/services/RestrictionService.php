@@ -234,7 +234,7 @@ class RestrictionService extends Component
         }
 
         $schema = $this->getSchema();
-        $schemaCode = $schema->isPublic ? $schema->id : $schema->name;
+        $schemaCode = $schema->isPublic ? 'public' : $schema->name;
 
         $fieldPermissions = $fieldRestrictions['schema-' . $schemaCode] ?? [];
 
