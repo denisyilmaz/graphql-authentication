@@ -122,6 +122,7 @@ class TokenService extends Component
             ],
             'resolve' => function($source, array $arguments) use ($settings, $errorService) {
                 $refreshToken = $_COOKIE['gql_refreshToken'] ?? $arguments['refreshToken'] ?? null;
+                $sessionOnly = $arguments['sessionOnly'] ?? false;
 
                 if (!$refreshToken) {
                     $errorService->throw($settings->invalidRefreshToken);
@@ -150,7 +151,7 @@ class TokenService extends Component
 
                 $elementsService = Craft::$app->getElements();
                 $elementsService->deleteElementById($refreshTokenElement->id);
-                $token = $this->create($user, $schemaId);
+                $token = $this->create($user, $schemaId, $sessionOnly);
 
                 return GraphqlAuthentication::$userService->getResponseFields($user, $schemaId, $token);
             },
@@ -336,7 +337,7 @@ class TokenService extends Component
      * @return array
      * @throws Error
      */
-    public function create(User $user, int $schemaId)
+    public function create(User $user, int $schemaId, bool $sessionOnly = false)
     {
         $settings = GraphqlAuthentication::$settings;
         $errorService = GraphqlAuthentication::$errorService;
@@ -391,7 +392,7 @@ class TokenService extends Component
             $errorService->throw($errors[key($errors)][0]);
         }
 
-        $this->_setCookie('gql_refreshToken', $refreshToken, $settings->jwtRefreshExpiration);
+        $this->_setCookie('gql_refreshToken', $refreshToken, $sessionOnly ? null : $settings->jwtRefreshExpiration);
 
         return [
             'jwt' => $jwt->toString(),
